@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Blank">
+<meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#08090b" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Bank of Blank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-screen phone app. Screens stack in place (splash, sign-in, code, home, account, cards, profile)
+   with a bottom tab bar once signed in. Ink-black balance card is the one bold element; everything else is quiet. */
+:root{
+  --bg:#f3f4f6;
+  --surface:#ffffff;
+  --ink:#0c0e12;
+  --muted:#6a707c;
+  --line:#e5e7eb;
+  --chip:#eef0f4;
+  --accent:#2350ff;
+  --pos:#0a8f4f;
+  --danger:#d92d20;
+  --hero:#0c0e12;
+  --hero-ink:#ffffff;
+  --hero-muted:rgba(255,255,255,.62);
+  --banner:rgba(246,246,248,.86);
+  --ui:"Geist",-apple-system,system-ui,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#08090b; --surface:#131519; --ink:#f2f3f5; --muted:#8d93a0; --line:#23262d; --chip:#1d2027;
+    --accent:#7090ff; --pos:#3ccf8e; --danger:#ff6b5e; --hero:#1a1d23; --banner:rgba(40,42,48,.86);
+    color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--ui);overflow:hidden;-webkit-text-size-adjust:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---- screens ---- */
+.screen{position:fixed;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 14px) max(16px, env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 96px) max(16px, env(safe-area-inset-left,0px))}
+.screen.bare{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
+.wrap{max-width:520px;margin:0 auto;display:grid;gap:18px}
+
+/* ---- logo ---- */
+.mark{display:block;flex:none}
+.wordmark{font-weight:600;letter-spacing:-.02em}
+
+/* ---- splash ---- */
+#splash{display:grid;place-items:center;background:var(--bg)}
+#splash .mark{width:76px;height:76px;animation:pop .6s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+
+/* ---- sign in ---- */
+.signin{min-height:100%;display:grid;grid-template-rows:1fr auto;gap:24px}
+.signin-top{display:grid;place-content:center;justify-items:center;gap:14px;text-align:center}
+.signin-top .mark{width:64px;height:64px}
+.signin-top .wordmark{font-size:22px}
+.signin-top h1{margin:10px 0 0;font-size:24px;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+.signin-top p{margin:0;color:var(--muted)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px 18px;border-radius:14px;font-weight:600;font-size:16px;background:var(--ink);color:var(--bg)}
+.btn.ghost{background:var(--chip);color:var(--ink)}
+.btn[disabled]{opacity:.45}
+.btn svg{width:22px;height:22px}
+.link{color:var(--accent);font-weight:500;font-size:14px}
+.signin-actions{display:grid;gap:12px;justify-items:center;padding-bottom:8px}
+
+/* ---- Face ID ---- */
+.faceid{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(0,0,0,.08)}
+.faceid-box{width:164px;height:164px;border-radius:30px;background:rgba(28,28,30,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:grid;place-items:center;align-content:center;gap:12px;color:#fff;animation:fadein .2s ease both}
+.faceid-box svg{width:72px;height:72px}
+.faceid-box span{font-size:15px;font-weight:500}
+@keyframes fadein{from{opacity:0;transform:scale(.92)}}
+.fid-scan .fid-corners{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.fid-check{stroke-dasharray:60;stroke-dashoffset:60;transition:stroke-dashoffset .45s ease}
+.fid-done .fid-check{stroke-dashoffset:0}
+.fid-done .fid-face{opacity:0}
+.fid-face,.fid-corners{transition:opacity .2s}
+
+/* ---- code screen ---- */
+.back{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:500;padding:6px 0}
+.back svg{width:20px;height:20px}
+.otp h1{margin:6px 0 0;font-size:26px;font-weight:600;letter-spacing:-.02em}
+.otp p{margin:0;color:var(--muted)}
+.boxes{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:360px}
+.box{height:56px;border-radius:12px;background:var(--surface);border:1.5px solid var(--line);display:grid;place-items:center;font-size:24px;font-weight:600}
+.box.on{border-color:var(--ink)}
+.boxes input{position:absolute;inset:0;opacity:0;font-size:16px;caret-color:transparent;color:transparent;background:transparent;border:0}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ---- home ---- */
+.topbar{display:flex;align-items:center;gap:12px}
+.topbar .mark{width:34px;height:34px}
+.topbar .hello{flex:1;min-width:0}
+.topbar .hello small{display:block;color:var(--muted);font-size:13px}
+.topbar .hello b{display:block;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);flex:none}
+.iconbtn svg{width:20px;height:20px}
+.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-weight:600;font-size:15px;flex:none}
+
+.hero{background:var(--hero);color:var(--hero-ink);border-radius:22px;padding:20px 20px 18px;display:grid;gap:6px}
+.hero .label{color:var(--hero-muted);font-size:13px;font-weight:500;letter-spacing:.01em}
+.hero .amount{font-size:40px;font-weight:600;letter-spacing:-.03em;line-height:1.1;white-space:nowrap;overflow:hidden}
+.hero .sub{display:flex;flex-wrap:wrap;gap:8px 14px;color:var(--hero-muted);font-size:13px}
+.hero .sub .up{color:#6ee7a8}
+
+.section{display:grid;gap:10px}
+.section h2{margin:0;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:14px 16px;width:100%;text-align:left}
+.row + .row{border-top:1px solid var(--line)}
+.row .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--chip);flex:none}
+.row .ic svg{width:20px;height:20px}
+.row .mid{flex:1;min-width:0}
+.row .mid b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:500;overflow-wrap:anywhere}
+.row .mid small{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:center;color:var(--muted);font-size:13px}
+.row .mid .bal{display:block;font-size:18px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:1px 0}
+.row .end{text-align:right;flex:none;max-width:58%;display:grid;justify-items:end}
+.row .end b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.row .end small{color:var(--muted);font-size:12px}
+.row .chev{width:16px;height:16px;color:var(--muted);flex:none}
+.row.tx{flex-wrap:wrap;row-gap:4px}
+.row.tx .mid{flex:1 1 130px}
+.row.tx .end{max-width:none;margin-left:auto}
+.pos{color:var(--pos)}
+.pending{font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--muted)}
+
+/* ---- account detail ---- */
+.acct-head{display:grid;gap:4px}
+.acct-head small{color:var(--muted)}
+.acct-head .amount{font-size:36px;font-weight:600;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;line-height:1.15}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+.stat small{display:block;color:var(--muted);font-size:12px}
+.stat b{display:block;font-weight:600;overflow-wrap:anywhere}
+.daylabel{font-size:13px;font-weight:600;color:var(--muted);padding:0 2px}
+
+/* ---- cards ---- */
+.debit{position:relative;aspect-ratio:1.586;max-width:100%;border-radius:20px;padding:20px;color:#f5f5f5;overflow:hidden;
+  background:linear-gradient(135deg,#1b1e24 0%,#0b0c0f 55%,#23262e 100%);box-shadow:0 18px 40px rgba(0,0,0,.25);display:grid;grid-template-rows:auto 1fr auto auto}
+.debit::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.08) 45%,transparent 60%)}
+.debit .top{display:flex;justify-content:space-between;align-items:center}
+.debit .top .wordmark{font-size:16px}
+.debit .chip{width:42px;height:32px;border-radius:7px;background:linear-gradient(135deg,#d9c58a,#a58d4f);align-self:center}
+.debit .pan{font-size:clamp(16px,5vw,21px);letter-spacing:.12em;font-weight:500}
+.debit .bottom{display:flex;justify-content:space-between;align-items:end;font-size:12px;letter-spacing:.06em;margin-top:6px}
+.debit .bottom b{display:block;font-size:13px;font-weight:600}
+.switch{position:relative;width:51px;height:31px;flex:none}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.switch i{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .2s;pointer-events:none}
+.switch i::after{content:"";position:absolute;left:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .2s}
+.switch input:checked + i{background:var(--pos)}
+.switch input:checked + i::after{transform:translateX(20px)}
+
+/* ---- profile ---- */
+.prof{display:grid;justify-items:center;gap:8px;padding:10px 0}
+.prof .avatar{width:76px;height:76px;font-size:28px}
+.prof h1{margin:0;font-size:22px;font-weight:600}
+.prof p{margin:0;color:var(--muted)}
+.danger{color:var(--danger);font-weight:600}
+
+/* ---- tab bar ---- */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+.tabbar button{display:grid;justify-items:center;gap:3px;font-size:11px;font-weight:500;color:var(--muted);padding:4px 0}
+.tabbar button svg{width:24px;height:24px}
+.tabbar button.on{color:var(--ink)}
+
+/* ---- notification banner ---- */
+.banner{position:fixed;z-index:50;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);max-width:520px;margin:0 auto;
+  background:var(--banner);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);
+  border-radius:22px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 10px 30px rgba(0,0,0,.18);
+  transform:translateY(calc(-100% - 40px));transition:transform .45s cubic-bezier(.2,.9,.25,1.05)}
+.banner.show{transform:none}
+.banner .mark{width:38px;height:38px}
+.banner .txt{flex:1;min-width:0}
+.banner .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.banner .meta span:last-child{text-transform:none}
+.banner b{display:block;font-weight:600;margin-top:1px}
+.banner p{margin:1px 0 0;font-size:14px}
+
+/* ---- secret editor ---- */
+.editor{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;-webkit-user-select:text;user-select:text}
+.ed-head{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:var(--surface)}
+.ed-head h2{margin:0;flex:1;font-size:18px}
+.ed-tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface);flex:none}
+.ed-tabs button{white-space:nowrap;padding:7px 12px;border-radius:999px;background:var(--chip);font-weight:500;font-size:14px}
+.ed-tabs button.on{background:var(--ink);color:var(--bg)}
+.ed-body{flex:1;overflow-y:auto;padding:16px;display:grid;gap:14px;align-content:start;-webkit-overflow-scrolling:touch}
+.ed-foot{display:flex;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--surface)}
+.ed-foot .btn{padding:13px}
+.f{display:grid;gap:5px}
+.f label,.f .l{font-size:13px;font-weight:600;color:var(--muted)}
+.f input,.f select{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+.f small{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.edcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px}
+.edcard .tools{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chk{display:flex;align-items:center;gap:10px;font-weight:500}
+.chk input{width:22px;height:22px;accent-color:var(--ink)}
+.note{margin:0;color:var(--muted);font-size:13px}
+.smallbtn{padding:8px 12px;border-radius:10px;background:var(--chip);font-weight:600;font-size:14px}
+.smallbtn.red{color:var(--danger)}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);transform:translateX(-50%);z-index:70;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:500;font-size:14px;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="logo" viewBox="0 0 48 48">
+      <rect width="48" height="48" rx="12" fill="#0c0e12"/>
+      <rect x=".5" y=".5" width="47" height="47" rx="11.5" fill="none" stroke="rgba(255,255,255,.14)"/>
+      <rect x="13" y="13" width="22" height="22" rx="4.5" fill="none" stroke="#fff" stroke-width="3.6"/>
+      <rect x="27.5" y="27.5" width="7.5" height="7.5" rx="1.6" fill="#fff"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- splash -->
+<section class="screen bare" id="splash"><svg class="mark" aria-label="Bank of Blank"><use href="#logo"/></svg></section>
+
+<!-- sign in -->
+<section class="screen bare" id="login" hidden>
+  <div class="wrap signin">
+    <div class="signin-top">
+      <svg class="mark" aria-hidden="true"><use href="#logo"/></svg>
+      <div class="wordmark">Bank of Blank</div>
+      <h1 id="welcome">Welcome back</h1>
+      <p>Sign in to see your accounts.</p>
+    </div>
+    <div class="signin-actions">
+      <button class="btn" id="signinBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M7 21H5a2 2 0 0 1-2-2v-2M17 21h2a2 2 0 0 0 2-2v-2"/><path d="M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.6 1.3 4.4 1.3 6 0"/></svg>
+        <span id="signinLbl">Sign in with Face ID</span>
+      </button>
+      <button class="link" id="switchUser">Not you? Switch user</button>
+    </div>
+  </div>
+</section>
+
+<!-- one-time code -->
+<section class="screen bare" id="otp" hidden>
+  <div class="wrap otp">
+    <div><button class="back" id="otpBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Back</button></div>
+    <h1>Verify it's you</h1>
+    <p id="otpText">For your security, enter the 6-digit code we sent to your phone.</p>
+    <div class="boxes" id="boxes">
+      <div class="box"></div><div class="box"></div><div class="box"></div><div class="box"></div><div class="box"></div><div class="box"></div>
+      <input id="otpIn" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" aria-label="6-digit code">
+    </div>
+    <button class="link" id="resend" style="justify-self:start">Didn't get a code? Resend</button>
+    <button class="btn" id="verify" disabled>Verify</button>
+  </div>
+</section>
+
+<!-- home -->
+<section class="screen" id="home" hidden>
+  <div class="wrap">
+    <div class="topbar">
+      <svg class="mark" aria-hidden="true"><use href="#logo"/></svg>
+      <div class="hello"><small id="greetTime">Good evening</small><b id="greetName">Jordan</b></div>
+      <button class="iconbtn" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></button>
+      <button class="avatar" id="homeAvatar" aria-label="Profile">J</button>
+    </div>
+
+    <div class="hero">
+      <span class="label">Total balance</span>
+      <div class="amount num" id="total">$0.00</div>
+      <div class="sub"><span id="acctCount">Across 3 accounts</span><span class="up num" id="today"></span></div>
+    </div>
+
+    <div class="section">
+      <h2>Accounts</h2>
+      <div class="card" id="acctList"></div>
+    </div>
+
+    <div class="section">
+      <h2>Recent activity</h2>
+      <div class="card" id="recent"></div>
+    </div>
+  </div>
+</section>
+
+<!-- account detail -->
+<section class="screen" id="account" hidden>
+  <div class="wrap">
+    <div><button class="back" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Accounts</button></div>
+    <div class="acct-head">
+      <small id="aName">Everyday Checking ••4821</small>
+      <div class="amount num" id="aAmount">$0.00</div>
+      <small id="aLabel">Available balance</small>
+    </div>
+    <div class="stats">
+      <div class="stat"><small id="s1l">Present balance</small><b class="num" id="s1">$0.00</b></div>
+      <div class="stat"><small id="s2l">Pending</small><b class="num" id="s2">$0.00</b></div>
+    </div>
+    <div class="section" id="aTx"></div>
+  </div>
+</section>
+
+<!-- cards -->
+<section class="screen" id="cards" hidden>
+  <div class="wrap">
+    <h1 style="margin:4px 0 0;font-size:28px;font-weight:600;letter-spacing:-.02em">Cards</h1>
+    <div class="debit">
+      <div class="top"><span class="wordmark">Bank of Blank</span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8.5 7.5a6 6 0 0 1 0 9M12 5a9.5 9.5 0 0 1 0 14M15.5 2.5a13 13 0 0 1 0 19"/></svg></div>
+      <div class="chip"></div>
+      <div class="pan num" id="cardPan">•••• •••• •••• 4821</div>
+      <div class="bottom"><div>CARDHOLDER<b id="cardName">JORDAN</b></div><div style="text-align:right">VALID THRU<b>08/29</b></div><div style="font-weight:700;font-size:14px;letter-spacing:.1em">DEBIT</div></div>
+    </div>
+    <div class="card">
+      <label class="row"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="mid"><b>Lock card</b><small>Stop new purchases</small></span><span class="switch"><input type="checkbox" id="lockCard"><i></i></span></label>
+      <label class="row"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8.5 7.5a6 6 0 0 1 0 9M12 5a9.5 9.5 0 0 1 0 14"/></svg></span><span class="mid"><b>Tap to pay</b><small>Contactless payments</small></span><span class="switch"><input type="checkbox" checked><i></i></span></label>
+      <label class="row"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><span class="mid"><b>International use</b><small>Purchases outside the US</small></span><span class="switch"><input type="checkbox" checked><i></i></span></label>
+    </div>
+  </div>
+</section>
+
+<!-- profile -->
+<section class="screen" id="profile" hidden>
+  <div class="wrap">
+    <div class="prof"><div class="avatar" id="profAvatar">J</div><h1 id="profName">Jordan</h1><p id="profSince">Member since 2019</p></div>
+    <div class="card">
+      <div class="row"><span class="mid"><b>Personal information</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></div>
+      <div class="row"><span class="mid"><b>Security &amp; Face ID</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></div>
+      <div class="row"><span class="mid"><b>Statements &amp; documents</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></div>
+      <div class="row"><span class="mid"><b>Notifications</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></div>
+    </div>
+    <div class="card"><button class="row" id="signOut"><span class="mid"><b class="danger">Sign out</b></span></button></div>
+  </div>
+</section>
+
+<nav class="tabbar" id="tabbar" hidden>
+  <button data-go="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-go="cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>Cards</button>
+  <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>Profile</button>
+</nav>
+
+<!-- Face ID -->
+<div class="faceid" id="faceid" hidden>
+  <div class="faceid-box fid-scan" id="fidBox">
+    <svg viewBox="0 0 72 72" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <g class="fid-corners"><path d="M20 6h-6a8 8 0 0 0-8 8v6M52 6h6a8 8 0 0 1 8 8v6M20 66h-6a8 8 0 0 1-8-8v-6M52 66h6a8 8 0 0 0 8-8v-6"/></g>
+      <g class="fid-face"><path d="M25 26v5M47 26v5M36 26v13h-3M27 47c5 4 13 4 18 0"/></g>
+      <path class="fid-check" d="M22 37l9 9 19-20"/>
+    </svg>
+    <span>Face ID</span>
+  </div>
+</div>
+
+<!-- deposit banner -->
+<div class="banner" id="banner" role="status">
+  <svg class="mark" aria-hidden="true"><use href="#logo"/></svg>
+  <div class="txt"><div class="meta"><span>Bank of Blank</span><span>now</span></div><b id="bTitle">Deposit received</b><p id="bBody"></p></div>
+</div>
+
+<!-- secret editor -->
+<div class="editor" id="editor" hidden>
+  <div class="ed-head"><h2>Edit app</h2><button class="smallbtn" id="edReset">Reset all</button></div>
+  <div class="ed-tabs" id="edTabs"></div>
+  <div class="ed-body" id="edBody"></div>
+  <div class="ed-foot"><button class="btn ghost" id="edCancel">Cancel</button><button class="btn" id="edSave">Save</button></div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const KEY = "blank.v1";
+
+/* ================= default data ================= */
+const DEFAULT = {
+  profile: { name: "Jordan Hale", phone4: "4417", since: "2019" },
+  accounts: [
+    { id: "a1", name: "Everyday Checking", type: "checking", last4: "4821", balance: 1000000000000, limit: 0, tx: [
+      { d: "Direct Deposit · PAYROLL", a: 1000000000, days: 0, pending: true },
+      { d: "Whataburger #1124", a: -12.47, days: 0, pending: false },
+      { d: "Lamborghini Dallas", a: -487250, days: 1, pending: false },
+      { d: "Buc-ee's #34", a: -84.12, days: 2, pending: false },
+      { d: "Netflix.com", a: -22.99, days: 3, pending: false },
+      { d: "H-E-B #592", a: -146.38, days: 4, pending: false },
+      { d: "Yacht club dues", a: -250000, days: 6, pending: false }
+    ]},
+    { id: "a2", name: "High-Yield Savings", type: "savings", last4: "7730", balance: 250000000000, limit: 0, tx: [
+      { d: "Interest payment", a: 868055555.56, days: 1, pending: false },
+      { d: "Transfer from Checking ••4821", a: 5000000000, days: 9, pending: false }
+    ]},
+    { id: "a3", name: "Wealth Portfolio", type: "investment", last4: "5502", balance: 75000000000, limit: 0, tx: [
+      { d: "Dividend · Index fund", a: 312500000, days: 2, pending: false },
+      { d: "Market gain", a: 1840000000, days: 5, pending: false }
+    ]},
+    { id: "a4", name: "Blank Black Card", type: "credit", last4: "9014", balance: 12480.22, limit: 50000000, tx: [
+      { d: "Private jet charter", a: -9800, days: 1, pending: true },
+      { d: "Nobu Dallas", a: -2680.22, days: 3, pending: false }
+    ]}
+  ],
+  deposit: { title: "Deposit received", amount: 1000000000000, from: "Wire transfer", account: "a1", delay: 1 },
+  signin: { faceid: true, otp: true, countup: true, lock: true }
+};
+
+const clone = o => JSON.parse(JSON.stringify(o));
+function load(){
+  const d = clone(DEFAULT);
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(KEY)); } catch {}
+  if (!s) return d;
+  return {
+    profile: Object.assign(d.profile, s.profile || {}),
+    accounts: Array.isArray(s.accounts) ? s.accounts : d.accounts,
+    deposit: Object.assign(d.deposit, s.deposit || {}),
+    signin: Object.assign(d.signin, s.signin || {})
+  };
+}
+let S = load();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+
+/* ================= helpers ================= */
+const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const fmt = n => money.format(+n || 0);
+const signed = n => (n < 0 ? "-" : "+") + money.format(Math.abs(+n || 0));
+const first = n => String(n || "").trim().split(/\s+/)[0] || "there";
+const initials = n => String(n || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "?";
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isCredit = a => a.type === "credit";
+const totalBalance = () => S.accounts.filter(a => !isCredit(a)).reduce((s, a) => s + (+a.balance || 0), 0);
+function dayLabel(days){
+  days = Math.max(0, Math.round(+days || 0));
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return new Date(Date.now() - days * 864e5).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+function greeting(){
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+let toastT;
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 1800); }
+function tripleTap(el, fn){
+  let n = 0, last = 0;
+  el.addEventListener("click", e => {
+    const now = Date.now();
+    n = now - last < 450 ? n + 1 : 1; last = now;
+    if (n >= 3){ n = 0; e.preventDefault(); e.stopPropagation(); fn(); }
+  });
+}
+const ICONS = {
+  checking: '<path d="M3 7h18v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 7l2-3h14l2 3M16 13.5h2"/>',
+  savings: '<path d="M4 10h16M6 10v8M10 10v8M14 10v8M18 10v8M3 21h18M12 3l9 5H3z"/>',
+  investment: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  credit: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/>',
+  in: '<path d="M17 7 7 17M7 9v8h8"/>',
+  out: '<path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/>'
+};
+const icon = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k] || ICONS.checking}</svg>`;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* shrink a big number until it fits its box */
+function fit(el, max){
+  el.style.fontSize = max + "px";
+  let s = max;
+  while (s > 14 && el.scrollWidth > el.clientWidth + 1){ s -= 1; el.style.fontSize = s + "px"; }
+}
+/* count a money value up; "shown" remembers what each spot last showed */
+let shown = {};
+function animateMoney(el, key, value, max, ms){
+  const to = +value || 0;
+  const from = key in shown ? shown[key] : (S.signin.countup ? 0 : to);
+  shown[key] = to;
+  el.textContent = fmt(to);
+  if (max) fit(el, max);
+  cancelAnimationFrame(el._raf);
+  if (from === to || reduced) return;
+  const dur = ms || 1700, t0 = performance.now();
+  const step = now => {
+    const x = Math.min(1, (now - t0) / dur);
+    const e = x >= 1 ? 1 : 1 - Math.pow(2, -10 * x);
+    el.textContent = fmt(Math.round((from + (to - from) * e) * 100) / 100);
+    if (x < 1) el._raf = requestAnimationFrame(step);
+  };
+  el._raf = requestAnimationFrame(step);
+}
+
+/* ================= navigation ================= */
+const SCREENS = ["splash", "login", "otp", "home", "account", "cards", "profile"];
+const TABBED = ["home", "account", "cards", "profile"];
+let current = "splash", signedIn = false, openAcct = null;
+function show(name){
+  current = name;
+  SCREENS.forEach(s => { $(s).hidden = s !== name; });
+  $("tabbar").hidden = !TABBED.includes(name);
+  document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.go === (name === "account" ? "home" : name)));
+  $(name).scrollTop = 0;
+}
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+function go(name){
+  if (!signedIn) return;
+  show(name);
+  if (name === "home") renderHome();
+  if (name === "cards") renderCards();
+  if (name === "profile") renderProfile();
+}
+
+/* ================= sign in ================= */
+function startSignIn(){
+  signedIn = false;
+  shown = {};
+  $("welcome").textContent = `Welcome back, ${first(S.profile.name)}`;
+  $("signinLbl").textContent = S.signin.faceid ? "Sign in with Face ID" : "Sign in";
+  show("login");
+  if (S.signin.faceid) setTimeout(() => { if (current === "login" && !signedIn) runSignIn(); }, 700);
+}
+let signingIn = false;
+async function runSignIn(){
+  if (signingIn) return;
+  signingIn = true;
+  if (S.signin.faceid) await faceId();
+  signingIn = false;
+  if (S.signin.otp) openOtp();
+  else enterHome();
+}
+$("signinBtn").addEventListener("click", runSignIn);
+$("switchUser").addEventListener("click", () => toast("Only one user is saved on this phone"));
+
+function faceId(){
+  return new Promise(res => {
+    const box = $("fidBox");
+    box.className = "faceid-box fid-scan";
+    $("faceid").hidden = false;
+    setTimeout(() => { box.className = "faceid-box fid-done"; }, 1300);
+    setTimeout(() => { $("faceid").hidden = true; res(); }, 2000);
+  });
+}
+
+/* ---- one-time code ---- */
+const otpIn = $("otpIn");
+function openOtp(){
+  const p = String(S.profile.phone4 || "").replace(/\D/g, "").slice(-4) || "0000";
+  $("otpText").textContent = `For your security, enter the 6-digit code we sent to (•••) •••-${p}.`;
+  otpIn.value = ""; renderBoxes();
+  $("verify").disabled = true; $("verify").textContent = "Verify";
+  show("otp");
+  setTimeout(() => { try { otpIn.focus(); } catch {} }, 250);
+}
+function renderBoxes(){
+  const v = otpIn.value;
+  document.querySelectorAll("#boxes .box").forEach((b, i) => { b.textContent = v[i] || ""; b.classList.toggle("on", i === Math.min(v.length, 5)); });
+  $("verify").disabled = v.length < 6;
+}
+otpIn.addEventListener("input", () => {
+  otpIn.value = otpIn.value.replace(/\D/g, "").slice(0, 6);
+  renderBoxes();
+  if (otpIn.value.length === 6) verify();
+});
+$("boxes").addEventListener("click", () => otpIn.focus());
+let verifying = false;
+function verify(){
+  if (verifying || current !== "otp" || otpIn.value.length < 6) return;
+  verifying = true;
+  otpIn.blur();
+  $("verify").innerHTML = '<span class="spin"></span>Verifying';
+  setTimeout(() => { verifying = false; enterHome(); }, 1100);
+}
+$("verify").addEventListener("click", verify);
+$("resend").addEventListener("click", () => toast("We sent you a new code"));
+$("otpBack").addEventListener("click", startSignIn);
+
+function enterHome(){
+  signedIn = true;
+  show("home");
+  renderHome();
+}
+
+/* ================= home ================= */
+function renderHome(){
+  $("greetTime").textContent = greeting();
+  $("greetName").textContent = S.profile.name || "Welcome";
+  $("homeAvatar").textContent = initials(S.profile.name);
+  animateMoney($("total"), "total", totalBalance(), 40, 1900);
+  const n = S.accounts.filter(a => !isCredit(a)).length;
+  $("acctCount").textContent = `Across ${n} account${n === 1 ? "" : "s"}`;
+  const todayIn = S.accounts.filter(a => !isCredit(a)).flatMap(a => a.tx || []).filter(t => (+t.days || 0) === 0 && +t.a > 0).reduce((s, t) => s + +t.a, 0);
+  $("today").textContent = todayIn > 0 ? `+${fmt(todayIn)} today` : "";
+
+  const list = $("acctList"); list.innerHTML = "";
+  S.accounts.forEach(a => {
+    const row = document.createElement("button");
+    row.className = "row";
+    row.innerHTML = `<span class="ic">${icon(a.type)}</span>
+      <span class="mid"><b>${esc(a.name)}</b><span class="bal num"></span><small>••${esc(a.last4)} · ${isCredit(a) ? "Current balance" : a.type === "investment" ? "Market value" : "Available"}</small></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>`;
+    row.addEventListener("click", () => openAccount(a.id));
+    list.appendChild(row);
+    animateMoney(row.querySelector(".bal"), "acct-" + a.id, a.balance, 0, 1700);
+  });
+  if (!S.accounts.length) list.innerHTML = '<div class="row"><span class="mid"><small>No accounts</small></span></div>';
+
+  const items = S.accounts.flatMap(a => (a.tx || []).map(t => ({ t, a })))
+    .sort((x, y) => (+x.t.days || 0) - (+y.t.days || 0)).slice(0, 6);
+  const rec = $("recent"); rec.innerHTML = "";
+  items.forEach(({ t, a }) => rec.appendChild(txRow(t, `${dayLabel(t.days)} · ••${a.last4}`)));
+  if (!items.length) rec.innerHTML = '<div class="row"><span class="mid"><small>No recent activity</small></span></div>';
+}
+function txRow(t, sub){
+  const el = document.createElement("div");
+  el.className = "row tx";
+  const inc = +t.a > 0;
+  el.innerHTML = `<span class="ic">${icon(inc ? "in" : "out")}</span>
+    <span class="mid"><b>${esc(t.d)}</b><small>${esc(sub)}${t.pending ? ' <span class="pending">Pending</span>' : ""}</small></span>
+    <span class="end"><b class="num ${inc ? "pos" : ""}">${esc(signed(t.a))}</b></span>`;
+  return el;
+}
+
+/* ================= account detail ================= */
+function openAccount(id){
+  openAcct = id;
+  show("account");
+  renderAccount();
+}
+function renderAccount(){
+  const a = S.accounts.find(x => x.id === openAcct);
+  if (!a){ go("home"); return; }
+  $("aName").textContent = `${a.name} ••${a.last4}`;
+  const pending = (a.tx || []).filter(t => t.pending).reduce((s, t) => s + (+t.a || 0), 0);
+  if (isCredit(a)){
+    $("aLabel").textContent = "Current balance";
+    $("s1l").textContent = "Available credit"; $("s1").textContent = fmt(Math.max(0, (+a.limit || 0) - (+a.balance || 0)));
+    $("s2l").textContent = "Credit limit"; $("s2").textContent = fmt(a.limit);
+  } else {
+    $("aLabel").textContent = a.type === "investment" ? "Market value" : "Available balance";
+    $("s1l").textContent = a.type === "investment" ? "Today's change" : "Present balance";
+    $("s1").textContent = a.type === "investment" ? "+" + fmt((+a.balance || 0) * 0.0124) : fmt((+a.balance || 0) - pending);
+    $("s2l").textContent = "Pending"; $("s2").textContent = signed(pending);
+  }
+  animateMoney($("aAmount"), "detail-" + a.id, a.balance, 36, 1200);
+  const box = $("aTx"); box.innerHTML = "";
+  const groups = new Map();
+  (a.tx || []).slice().sort((x, y) => (+x.days || 0) - (+y.days || 0)).forEach(t => {
+    const k = dayLabel(t.days);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(t);
+  });
+  groups.forEach((txs, label) => {
+    const h = document.createElement("div"); h.className = "daylabel"; h.textContent = label; box.appendChild(h);
+    const c = document.createElement("div"); c.className = "card";
+    txs.forEach(t => c.appendChild(txRow(t, t.pending ? "Processing" : a.name)));
+    box.appendChild(c);
+  });
+  if (!groups.size){ const p = document.createElement("p"); p.className = "note"; p.textContent = "No transactions yet."; box.appendChild(p); }
+}
+
+/* ================= cards + profile ================= */
+function renderCards(){
+  const a = S.accounts.find(x => x.type === "checking") || S.accounts[0];
+  $("cardPan").textContent = `•••• •••• •••• ${a ? a.last4 : "0000"}`;
+  $("cardName").textContent = (S.profile.name || "").toUpperCase();
+}
+$("lockCard").addEventListener("change", e => toast(e.target.checked ? "Card locked" : "Card unlocked"));
+function renderProfile(){
+  $("profAvatar").textContent = initials(S.profile.name);
+  $("profName").textContent = S.profile.name;
+  $("profSince").textContent = `Member since ${S.profile.since}`;
+}
+$("signOut").addEventListener("click", startSignIn);
+
+/* ================= deposit banner ================= */
+let bannerT;
+function showBanner(title, body){
+  $("bTitle").textContent = title; $("bBody").textContent = body;
+  const b = $("banner");
+  b.classList.add("show");
+  clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove("show"), 6000);
+}
+$("banner").addEventListener("click", () => $("banner").classList.remove("show"));
+function fireDeposit(){
+  const d = S.deposit;
+  const acc = S.accounts.find(a => a.id === d.account) || S.accounts.find(a => !isCredit(a));
+  if (!acc) return;
+  setTimeout(() => {
+    const amt = Math.round((+d.amount || 0) * 100) / 100;
+    acc.balance = Math.round(((+acc.balance || 0) + amt) * 100) / 100;
+    (acc.tx = acc.tx || []).unshift({ d: d.from ? `Deposit · ${d.from}` : "Deposit", a: amt, days: 0, pending: false });
+    save();
+    showBanner(d.title || "Deposit received", `${fmt(amt)} was deposited to ${acc.name} ••${acc.last4}.`);
+    if (current === "home") renderHome();
+    else if (current === "account") renderAccount();
+  }, Math.max(0, +d.delay || 0) * 1000);
+}
+tripleTap($("homeAvatar"), fireDeposit);
+
+/* ================= lock when leaving ================= */
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden){ hiddenAt = Date.now(); return; }
+  const away = hiddenAt ? Date.now() - hiddenAt : 0;
+  hiddenAt = 0;
+  if (signedIn && S.signin.lock && $("editor").hidden && away > 10000) startSignIn();
+});
+
+/* ================= secret editor (triple-tap the total balance) ================= */
+let draft = null, edTab = "profile", edAcct = null;
+const ED_TABS = [["profile", "Profile"], ["accounts", "Accounts"], ["activity", "Activity"], ["deposit", "Deposit"], ["signin", "Sign-in"]];
+ED_TABS.forEach(([k, label]) => {
+  const b = document.createElement("button");
+  b.textContent = label; b.dataset.k = k;
+  b.addEventListener("click", () => { edTab = k; renderEditor(); });
+  $("edTabs").appendChild(b);
+});
+function openEditor(){
+  draft = clone(S);
+  edAcct = (draft.accounts[0] || {}).id || null;
+  edTab = "profile";
+  $("editor").hidden = false;
+  renderEditor();
+}
+tripleTap($("total"), openEditor);
+$("edCancel").addEventListener("click", () => { $("editor").hidden = true; draft = null; });
+$("edSave").addEventListener("click", () => {
+  S = draft; draft = null; save();
+  $("editor").hidden = true;
+  shown = {};
+  if (current === "home") renderHome(); else if (current === "account") renderAccount(); else if (current === "cards") renderCards(); else if (current === "profile") renderProfile();
+  toast("Saved");
+});
+$("edReset").addEventListener("click", () => {
+  draft = clone(DEFAULT); edAcct = draft.accounts[0].id; renderEditor(); toast("Reset. Tap Save to keep it.");
+});
+
+function field(label, value, onInput, opts = {}){
+  const w = document.createElement("div"); w.className = "f";
+  const id = "ed-" + Math.random().toString(36).slice(2, 9);
+  w.innerHTML = `<label for="${id}">${esc(label)}</label>`;
+  let el;
+  if (opts.options){
+    el = document.createElement("select");
+    opts.options.forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; el.appendChild(o); });
+    el.value = value;
+    el.addEventListener("change", () => onInput(el.value));
+  } else {
+    el = document.createElement("input");
+    el.type = opts.type || "text";
+    if (opts.inputmode) el.inputMode = opts.inputmode;
+    if (opts.step) el.step = opts.step;
+    el.value = value ?? "";
+    el.autocomplete = "off";
+    el.addEventListener("input", () => onInput(opts.type === "number" ? (el.value === "" ? 0 : +el.value) : el.value));
+  }
+  el.id = id;
+  w.appendChild(el);
+  if (opts.hint){ const s = document.createElement("small"); s.textContent = opts.hint; w.appendChild(s); }
+  return w;
+}
+function check(label, value, onChange){
+  const l = document.createElement("label"); l.className = "chk";
+  const i = document.createElement("input"); i.type = "checkbox"; i.checked = !!value;
+  i.addEventListener("change", () => onChange(i.checked));
+  l.appendChild(i); l.appendChild(document.createTextNode(label));
+  return l;
+}
+function note(text){ const p = document.createElement("p"); p.className = "note"; p.textContent = text; return p; }
+function btn(label, cls, fn){ const b = document.createElement("button"); b.className = cls; b.textContent = label; b.addEventListener("click", fn); return b; }
+const TYPES = [["checking", "Checking"], ["savings", "Savings"], ["investment", "Investment"], ["credit", "Credit card"]];
+
+function renderEditor(){
+  document.querySelectorAll("#edTabs button").forEach(b => b.classList.toggle("on", b.dataset.k === edTab));
+  const body = $("edBody"); body.innerHTML = ""; body.scrollTop = 0;
+  const D = draft;
+
+  if (edTab === "profile"){
+    body.appendChild(field("Your name", D.profile.name, v => D.profile.name = v));
+    body.appendChild(field("Last 4 digits of phone (shown on the code screen)", D.profile.phone4, v => D.profile.phone4 = v, { inputmode: "numeric" }));
+    body.appendChild(field("Member since", D.profile.since, v => D.profile.since = v, { inputmode: "numeric" }));
+    body.appendChild(note("Secret taps: triple-tap the total balance to open this editor. Triple-tap your profile picture (top right) to drop a deposit."));
+  }
+
+  if (edTab === "accounts"){
+    D.accounts.forEach((a, i) => {
+      const c = document.createElement("div"); c.className = "edcard";
+      c.appendChild(field("Account name", a.name, v => a.name = v));
+      const g = document.createElement("div"); g.className = "grid2";
+      g.appendChild(field("Type", a.type, v => { a.type = v; renderEditor(); }, { options: TYPES }));
+      g.appendChild(field("Last 4 digits", a.last4, v => a.last4 = v, { inputmode: "numeric" }));
+      c.appendChild(g);
+      c.appendChild(field(a.type === "credit" ? "Amount owed" : "Balance", a.balance, v => a.balance = v, { type: "number", inputmode: "decimal", step: "0.01" }));
+      if (a.type === "credit") c.appendChild(field("Credit limit", a.limit, v => a.limit = v, { type: "number", inputmode: "decimal", step: "0.01" }));
+      const tools = document.createElement("div"); tools.className = "tools";
+      tools.appendChild(btn("Move up", "smallbtn", () => { if (i > 0){ D.accounts.splice(i - 1, 0, D.accounts.splice(i, 1)[0]); renderEditor(); } }));
+      tools.appendChild(btn("Delete account", "smallbtn red", () => { D.accounts.splice(i, 1); if (edAcct === a.id) edAcct = (D.accounts[0] || {}).id || null; renderEditor(); }));
+      c.appendChild(tools);
+      body.appendChild(c);
+    });
+    body.appendChild(btn("Add account", "btn ghost", () => {
+      D.accounts.push({ id: "a" + Date.now().toString(36), name: "New account", type: "checking", last4: String(1000 + Math.floor(Math.random() * 9000)), balance: 0, limit: 0, tx: [] });
+      renderEditor();
+      body.scrollTop = body.scrollHeight;
+    }));
+  }
+
+  if (edTab === "activity"){
+    if (!D.accounts.length){ body.appendChild(note("Add an account first.")); return; }
+    if (!D.accounts.some(a => a.id === edAcct)) edAcct = D.accounts[0].id;
+    body.appendChild(field("Account", edAcct, v => { edAcct = v; renderEditor(); }, { options: D.accounts.map(a => [a.id, `${a.name} ••${a.last4}`]) }));
+    const acc = D.accounts.find(a => a.id === edAcct);
+    acc.tx = acc.tx || [];
+    body.appendChild(btn("Add transaction", "btn ghost", () => { acc.tx.unshift({ d: "New transaction", a: -10, days: 0, pending: false }); renderEditor(); }));
+    body.appendChild(note("Amounts below zero are spending, above zero are money coming in. Days ago: 0 = Today, 1 = Yesterday."));
+    acc.tx.forEach((t, i) => {
+      const c = document.createElement("div"); c.className = "edcard";
+      c.appendChild(field("Description", t.d, v => t.d = v));
+      const g = document.createElement("div"); g.className = "grid2";
+      g.appendChild(field("Amount", t.a, v => t.a = v, { type: "number", inputmode: "decimal", step: "0.01" }));
+      g.appendChild(field("Days ago", t.days, v => t.days = Math.max(0, Math.round(v)), { type: "number", inputmode: "numeric" }));
+      c.appendChild(g);
+      const tools = document.createElement("div"); tools.className = "tools";
+      tools.appendChild(check("Pending", t.pending, v => t.pending = v));
+      tools.appendChild(btn("Delete", "smallbtn red", () => { acc.tx.splice(i, 1); renderEditor(); }));
+      c.appendChild(tools);
+      body.appendChild(c);
+    });
+  }
+
+  if (edTab === "deposit"){
+    body.appendChild(note("Triple-tap your profile picture (top right of the home screen) to drop this deposit. The banner slides down, the money is added to the account and shows up in its activity."));
+    body.appendChild(field("Banner title", D.deposit.title, v => D.deposit.title = v));
+    body.appendChild(field("Amount", D.deposit.amount, v => D.deposit.amount = v, { type: "number", inputmode: "decimal", step: "0.01" }));
+    body.appendChild(field("From (shows in activity)", D.deposit.from, v => D.deposit.from = v));
+    if (D.accounts.length) body.appendChild(field("Into account", D.deposit.account, v => D.deposit.account = v, { options: D.accounts.map(a => [a.id, `${a.name} ••${a.last4}`]) }));
+    body.appendChild(field("Delay before it drops (seconds)", D.deposit.delay, v => D.deposit.delay = Math.max(0, v), { type: "number", inputmode: "decimal", step: "0.5", hint: "Gives you time to hand the phone over." }));
+  }
+
+  if (edTab === "signin"){
+    body.appendChild(check("Face ID animation when signing in", D.signin.faceid, v => D.signin.faceid = v));
+    body.appendChild(check("6-digit code screen after Face ID", D.signin.otp, v => D.signin.otp = v));
+    body.appendChild(check("Balances count up from $0", D.signin.countup, v => D.signin.countup = v));
+    body.appendChild(check("Sign out when I leave the app", D.signin.lock, v => D.signin.lock = v));
+    body.appendChild(note("Any 6-digit code works on the code screen. Nothing is sent anywhere."));
+  }
+}
+
+/* ================= start ================= */
+show("splash");
+setTimeout(startSignIn, 900);
+})();
+</script>
+</body>
+</html>
