@@ -1,6 +1,6 @@
 {
-  "name": "BankFlorida",
-  "short_name": "BankFlorida",
+  "name": "BankFlorida Mobile",
+  "short_name": "BankFlorida Mobile",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
