@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="Bankicon.png">
 <link rel="icon" href="Bankicon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Bank of Blank</title>
+<title>BankFlorida</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
@@ -58,7 +58,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .wrap{max-width:520px;margin:0 auto;display:grid;gap:18px}
 
 /* ---- logo ---- */
-.mark{display:block;flex:none}
+.mark{display:block;flex:none;object-fit:cover;border-radius:22.5%}
 .wordmark{font-weight:600;letter-spacing:-.02em}
 
 /* ---- splash ---- */
@@ -234,26 +234,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 </head>
 <body>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <symbol id="logo" viewBox="0 0 48 48">
-      <rect width="48" height="48" rx="12" fill="#0c0e12"/>
-      <rect x=".5" y=".5" width="47" height="47" rx="11.5" fill="none" stroke="rgba(255,255,255,.14)"/>
-      <rect x="13" y="13" width="22" height="22" rx="4.5" fill="none" stroke="#fff" stroke-width="3.6"/>
-      <rect x="27.5" y="27.5" width="7.5" height="7.5" rx="1.6" fill="#fff"/>
-    </symbol>
-  </defs>
-</svg>
-
 <!-- splash -->
-<section class="screen bare" id="splash"><svg class="mark" aria-label="Bank of Blank"><use href="#logo"/></svg></section>
+<section class="screen bare" id="splash"><img class="mark" src="Bankicon.png" alt="BankFlorida"></section>
 
 <!-- sign in -->
 <section class="screen bare" id="login" hidden>
   <div class="wrap signin">
     <div class="signin-top">
-      <svg class="mark" aria-hidden="true"><use href="#logo"/></svg>
-      <div class="wordmark">Bank of Blank</div>
+      <img class="mark" src="Bankicon.png" alt="">
+      <div class="wordmark">BankFloridak</div>
       <h1 id="welcome">Welcome back</h1>
       <p>Sign in to see your accounts.</p>
     </div>
@@ -286,7 +275,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <section class="screen" id="home" hidden>
   <div class="wrap">
     <div class="topbar">
-      <svg class="mark" aria-hidden="true"><use href="#logo"/></svg>
+      <img class="mark" src="Bankicon.png" alt="">
       <div class="hello"><small id="greetTime">Good evening</small><b id="greetName">Jordan</b></div>
       <button class="iconbtn" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></button>
       <button class="avatar" id="homeAvatar" aria-label="Profile">J</button>
@@ -356,7 +345,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <p class="note" id="sdInfo"></p>
     <div class="stats" id="sdStats"></div>
     <div class="form" id="sdForm"></div>
-    <div class="alert" id="sdMsg" role="alert" hidden><b>Transfer not completed</b><p>Sending money outside Bank of Blank isn't turned on for this account. Please try again later.</p></div>
+    <div class="alert" id="sdMsg" role="alert" hidden><b>Transfer not completed</b><p>Sending money outside BankFlorida isn't turned on for this account. Please try again later.</p></div>
     <button class="btn" id="sdGo">Continue</button>
   </div>
 </section>
@@ -366,7 +355,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div class="wrap">
     <h1 class="pagetitle">Cards</h1>
     <div class="debit">
-      <div class="top"><span class="wordmark">Bank of Blank</span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8.5 7.5a6 6 0 0 1 0 9M12 5a9.5 9.5 0 0 1 0 14M15.5 2.5a13 13 0 0 1 0 19"/></svg></div>
+      <div class="top"><span class="wordmark">BankFlorida</span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8.5 7.5a6 6 0 0 1 0 9M12 5a9.5 9.5 0 0 1 0 14M15.5 2.5a13 13 0 0 1 0 19"/></svg></div>
       <div class="chip"></div>
       <div class="pan num" id="cardPan">•••• •••• •••• 4821</div>
       <div class="bottom"><div>CARDHOLDER<b id="cardName">JORDAN</b></div><div style="text-align:right">VALID THRU<b>08/29</b></div><div style="font-weight:700;font-size:14px;letter-spacing:.1em">DEBIT</div></div>
@@ -414,8 +403,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <!-- deposit banner -->
 <div class="banner" id="banner" role="status">
-  <svg class="mark" aria-hidden="true"><use href="#logo"/></svg>
-  <div class="txt"><div class="meta"><span>Bank of Blank</span><span>now</span></div><b id="bTitle">Deposit received</b><p id="bBody"></p></div>
+  <img class="mark" src="Bankicon.png" alt="">
+  <div class="txt"><div class="meta"><span>BankFlorida</span><span>now</span></div><b id="bTitle">Deposit received</b><p id="bBody"></p></div>
 </div>
 
 <!-- secret editor -->
