@@ -176,8 +176,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .prof p{margin:0;color:var(--muted)}
 .danger{color:var(--danger);font-weight:600}
 
+/* ---- transfer ---- */
+.pagetitle{margin:4px 0 0;font-size:28px;font-weight:600;letter-spacing:-.02em}
+.form{display:grid;gap:14px}
+.row .ic.ic-zelle{background:#6d1ed4;color:#fff}
+.row .ic.ic-zelle svg{stroke-width:2.4}
+.alert{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--danger);border-radius:14px;padding:12px 14px;display:grid;gap:2px}
+.alert b{font-weight:600}
+.alert p{margin:0;color:var(--muted);font-size:14px}
+
 /* ---- tab bar ---- */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
 .tabbar button{display:grid;justify-items:center;gap:3px;font-size:11px;font-weight:500;color:var(--muted);padding:4px 0}
 .tabbar button svg{width:24px;height:24px}
 .tabbar button.on{color:var(--ink)}
@@ -208,6 +217,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .f{display:grid;gap:5px}
 .f label,.f .l{font-size:13px;font-weight:600;color:var(--muted)}
 .f input,.f select{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+.f input{-webkit-user-select:text;user-select:text}
 .f small{color:var(--muted);font-size:12px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .edcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px}
@@ -317,10 +327,44 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   </div>
 </section>
 
+<!-- transfer -->
+<section class="screen" id="transfer" hidden>
+  <div class="wrap">
+    <h1 class="pagetitle">Transfer</h1>
+    <div class="section"><h2>Move money</h2><div class="card" id="xferMove"></div></div>
+    <div class="section"><h2>Send &amp; pay</h2><div class="card" id="xferSend"></div></div>
+    <div class="section"><h2>Scheduled</h2><div class="card"><div class="row"><span class="mid"><small>No scheduled transfers</small></span></div></div></div>
+  </div>
+</section>
+
+<!-- transfer between my accounts -->
+<section class="screen" id="move" hidden>
+  <div class="wrap">
+    <div><button class="back" data-go="transfer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Transfer</button></div>
+    <h1 class="pagetitle">Between my accounts</h1>
+    <div class="form" id="mvForm"></div>
+    <p class="note" id="mvErr" hidden>That's more than the available balance.</p>
+    <button class="btn" id="mvGo" disabled>Transfer now</button>
+  </div>
+</section>
+
+<!-- send to a person / wire / ACH (looks real, never sends) -->
+<section class="screen" id="send" hidden>
+  <div class="wrap">
+    <div><button class="back" data-go="transfer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Transfer</button></div>
+    <h1 class="pagetitle" id="sdTitle">Send</h1>
+    <p class="note" id="sdInfo"></p>
+    <div class="stats" id="sdStats"></div>
+    <div class="form" id="sdForm"></div>
+    <div class="alert" id="sdMsg" role="alert" hidden><b>Transfer not completed</b><p>Sending money outside Bank of Blank isn't turned on for this account. Please try again later.</p></div>
+    <button class="btn" id="sdGo">Continue</button>
+  </div>
+</section>
+
 <!-- cards -->
 <section class="screen" id="cards" hidden>
   <div class="wrap">
-    <h1 style="margin:4px 0 0;font-size:28px;font-weight:600;letter-spacing:-.02em">Cards</h1>
+    <h1 class="pagetitle">Cards</h1>
     <div class="debit">
       <div class="top"><span class="wordmark">Bank of Blank</span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8.5 7.5a6 6 0 0 1 0 9M12 5a9.5 9.5 0 0 1 0 14M15.5 2.5a13 13 0 0 1 0 19"/></svg></div>
       <div class="chip"></div>
@@ -351,6 +395,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 <nav class="tabbar" id="tabbar" hidden>
   <button data-go="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-go="transfer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/></svg>Transfer</button>
   <button data-go="cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>Cards</button>
   <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>Profile</button>
 </nav>
@@ -470,7 +515,11 @@ const ICONS = {
   investment: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
   credit: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/>',
   in: '<path d="M17 7 7 17M7 9v8h8"/>',
-  out: '<path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/>'
+  out: '<path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/>',
+  move: '<path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/>',
+  person: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/>',
+  wire: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  zelle: '<path d="M7.5 7.5h9l-9 9h9"/><path d="M12 4.5v3M12 16.5v3"/>'
 };
 const icon = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k] || ICONS.checking}</svg>`;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -502,14 +551,15 @@ function animateMoney(el, key, value, max, ms){
 }
 
 /* ================= navigation ================= */
-const SCREENS = ["splash", "login", "otp", "home", "account", "cards", "profile"];
-const TABBED = ["home", "account", "cards", "profile"];
+const SCREENS = ["splash", "login", "otp", "home", "account", "transfer", "move", "send", "cards", "profile"];
+const TABBED = ["home", "account", "transfer", "move", "send", "cards", "profile"];
+const TAB_OF = { account: "home", move: "transfer", send: "transfer" };
 let current = "splash", signedIn = false, openAcct = null;
 function show(name){
   current = name;
   SCREENS.forEach(s => { $(s).hidden = s !== name; });
   $("tabbar").hidden = !TABBED.includes(name);
-  document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.go === (name === "account" ? "home" : name)));
+  document.querySelectorAll(".tabbar button").forEach(b => b.classList.toggle("on", b.dataset.go === (TAB_OF[name] || name)));
   $(name).scrollTop = 0;
 }
 document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
@@ -599,7 +649,7 @@ function renderHome(){
   animateMoney($("total"), "total", totalBalance(), 40, 1900);
   const n = S.accounts.filter(a => !isCredit(a)).length;
   $("acctCount").textContent = `Across ${n} account${n === 1 ? "" : "s"}`;
-  const todayIn = S.accounts.filter(a => !isCredit(a)).flatMap(a => a.tx || []).filter(t => (+t.days || 0) === 0 && +t.a > 0).reduce((s, t) => s + +t.a, 0);
+  const todayIn = S.accounts.filter(a => !isCredit(a)).flatMap(a => a.tx || []).filter(t => (+t.days || 0) === 0 && +t.a > 0 && !t.xfer).reduce((s, t) => s + +t.a, 0);
   $("today").textContent = todayIn > 0 ? `+${fmt(todayIn)} today` : "";
 
   const list = $("acctList"); list.innerHTML = "";
@@ -668,6 +718,112 @@ function renderAccount(){
   });
   if (!groups.size){ const p = document.createElement("p"); p.className = "note"; p.textContent = "No transactions yet."; box.appendChild(p); }
 }
+
+/* ================= transfer ================= */
+const amount = v => Math.round((parseFloat(String(v ?? "").replace(/[^0-9.]/g, "")) || 0) * 100) / 100;
+const acctOpts = list => list.map(a => [a.id, `${a.name} ••${a.last4}`]);
+function xferRow(title, sub, ic, fn){
+  const row = document.createElement("button");
+  row.className = "row";
+  row.innerHTML = `<span class="ic ic-${ic}">${icon(ic)}</span><span class="mid"><b>${esc(title)}</b><small>${esc(sub)}</small></span>
+    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>`;
+  row.addEventListener("click", fn);
+  return row;
+}
+
+/* ---- between my accounts: really moves the money ---- */
+let mv = null, moving = false;
+function openMove(){
+  const from = S.accounts.filter(a => !isCredit(a));
+  if (!from.length || S.accounts.length < 2){ toast("You need two accounts to transfer"); return; }
+  mv = { from: from[0].id, to: S.accounts.find(a => a.id !== from[0].id).id, amt: "" };
+  show("move");
+  renderMove();
+}
+function renderMove(){
+  const f = $("mvForm"); f.innerHTML = "";
+  const src = S.accounts.find(a => a.id === mv.from);
+  f.appendChild(field("From", mv.from, v => {
+    mv.from = v;
+    if (mv.to === v) mv.to = S.accounts.find(a => a.id !== v).id;
+    renderMove();
+  }, { options: acctOpts(S.accounts.filter(a => !isCredit(a))), hint: `Available ${fmt(src.balance)}` }));
+  f.appendChild(field("To", mv.to, v => { mv.to = v; checkMove(); }, { options: acctOpts(S.accounts.filter(a => a.id !== mv.from)) }));
+  f.appendChild(field("Amount", mv.amt, v => { mv.amt = v; checkMove(); }, { inputmode: "decimal" }));
+  checkMove();
+}
+function checkMove(){
+  const src = S.accounts.find(a => a.id === mv.from), n = amount(mv.amt);
+  const over = n > (+src.balance || 0);
+  $("mvErr").hidden = !over;
+  $("mvGo").disabled = moving || !(n > 0 && !over && mv.to && mv.to !== mv.from);
+}
+$("mvGo").addEventListener("click", () => {
+  if (moving || $("mvGo").disabled) return;
+  moving = true;
+  $("mvGo").innerHTML = '<span class="spin"></span>Transferring';
+  setTimeout(() => {
+    moving = false;
+    $("mvGo").textContent = "Transfer now";
+    const src = S.accounts.find(a => a.id === mv.from), dst = S.accounts.find(a => a.id === mv.to), n = amount(mv.amt);
+    if (!src || !dst || !(n > 0)) return;
+    src.balance = Math.round(((+src.balance || 0) - n) * 100) / 100;
+    dst.balance = Math.round(((+dst.balance || 0) + (isCredit(dst) ? -n : n)) * 100) / 100;
+    (src.tx = src.tx || []).unshift({ d: `Transfer to ${dst.name} ••${dst.last4}`, a: -n, days: 0, pending: false, xfer: true });
+    (dst.tx = dst.tx || []).unshift({ d: isCredit(dst) ? "Payment · Thank you" : `Transfer from ${src.name} ••${src.last4}`, a: n, days: 0, pending: false, xfer: true });
+    save();
+    if (current === "move"){ go("home"); toast("Transfer complete"); }
+  }, 900);
+});
+
+/* ---- send to a person / wire / ACH: full forms, but never completes ---- */
+const SEND = {
+  person: { title: "Zelle", sub: "Phone or email · Usually minutes", ic: "zelle",
+    info: "Send money to friends and family with just their phone number or email.",
+    stats: [["Arrives", "Usually in minutes"], ["Fee", "No fee"]],
+    fields: [["Phone number or email", { type: "email" }], ["Amount", { inputmode: "decimal" }], ["Memo (optional)", {}]] },
+  wire: { title: "Wire transfer", sub: "Same business day · $25 fee", ic: "wire",
+    info: "Wires sent by 4:00 PM CT go out the same business day. Wires can't be canceled once sent.",
+    stats: [["Arrives", "Same business day"], ["Fee", "$25 · $45 international"]],
+    fields: [["Recipient name", {}], ["Routing number", { inputmode: "numeric" }], ["Account number", { inputmode: "numeric" }], ["Amount", { inputmode: "decimal" }]] },
+  ach: { title: "ACH to another bank", sub: "1–3 business days · No fee", ic: "savings",
+    info: "Move money to an account you own at another bank.",
+    stats: [["Arrives", "1–3 business days"], ["Fee", "No fee"]],
+    fields: [["Account holder name", {}], ["Routing number", { inputmode: "numeric" }], ["Account number", { inputmode: "numeric" }],
+      ["Account type", { options: [["checking", "Checking"], ["savings", "Savings"]], value: "checking" }], ["Amount", { inputmode: "decimal" }]] }
+};
+let sending = false;
+function openSend(k){
+  const m = SEND[k];
+  $("sdTitle").textContent = m.title;
+  $("sdInfo").textContent = m.info;
+  $("sdStats").innerHTML = m.stats.map(([l, v]) => `<div class="stat"><small>${esc(l)}</small><b>${esc(v)}</b></div>`).join("");
+  const f = $("sdForm"); f.innerHTML = "";
+  const from = S.accounts.filter(a => !isCredit(a));
+  if (from.length) f.appendChild(field("From", from[0].id, () => {}, { options: acctOpts(from) }));
+  m.fields.forEach(([label, opts]) => f.appendChild(field(label, opts.value || "", () => {}, opts)));
+  $("sdMsg").hidden = true;
+  $("sdGo").textContent = "Continue";
+  show("send");
+}
+$("sdGo").addEventListener("click", () => {
+  if (sending) return;
+  const blank = [...$("sdForm").querySelectorAll("input")].some(i => !i.value.trim() && !/optional/i.test(i.labels[0] ? i.labels[0].textContent : ""));
+  if (blank){ toast("Fill in every field"); return; }
+  sending = true;
+  $("sdMsg").hidden = true;
+  $("sdGo").innerHTML = '<span class="spin"></span>Checking';
+  setTimeout(() => {
+    sending = false;
+    $("sdGo").textContent = "Continue";
+    if (current !== "send") return;
+    $("sdMsg").hidden = false;
+    $("sdMsg").scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+  }, 1200);
+});
+
+$("xferMove").appendChild(xferRow("Between my accounts", "Instant · No fee", "move", openMove));
+Object.entries(SEND).forEach(([k, m]) => $("xferSend").appendChild(xferRow(m.title, m.sub, m.ic, () => openSend(k))));
 
 /* ================= cards + profile ================= */
 function renderCards(){
